@@ -1,3 +1,5 @@
+from PIL import Image,ImageDraw
+
 def readfile(filename):
     lines=[line for line in file(filename)]
 
@@ -33,13 +35,13 @@ def hcluster(rows,distance=pearson):
     distances={}
     currentclustid=-1
 
-    clust=[bicluster(row[i],id=i) for i in range(len(rows))]
+    clust=[bicluster(rows[i],id=i) for i in range(len(rows))]
 
     while len(clust)>1:
         lowestpair=(0,1)
         closest=distance(clust[0].vec,clust[1].vec)
 
-        for i in range(len[clust]):
+        for i in range(len(clust)):
             for j in range(i+1,len(clust)):
                 if (clust[i].id,clust[j].id) not in distances:
                     distances[(clust[i].id,clust[j].id)]=distance(clust[i].vec,clust[j].vec)
@@ -51,7 +53,7 @@ def hcluster(rows,distance=pearson):
         (clust[lowestpair[0]].vec[i]+clust[lowestpair[1]].vec[i])/2.0
         for i in range(len(clust[0].vec))]
 
-        newcluster=bicluster(mergevec,left=clust[lowestpair[0]],right=clust[lowestpair[1]],distance=cloest,id=currentclustid)
+        newcluster=bicluster(mergevec,left=clust[lowestpair[0]],right=clust[lowestpair[1]],distance=closest,id=currentclustid)
 
         #the new merged clust id should be negetive
         currentclustid-=1
@@ -60,6 +62,65 @@ def hcluster(rows,distance=pearson):
         clust.append(newcluster)
     return clust[0]
 
+def printclust(clust,labels=None,n=0):
+    for i in range(n): print ' ',
+    if clust.id<0:
+        #negative means a leef
+            print '-'
+    else:
+        #positive means a node
+        if labels==None: print clust.id
+        else: print labels[clust.id]
+
+    if clust.left!=None: printclust(clust.left,labels=labels,n=n+1)
+    if clust.right!=None: printclust(clust.right,labels=labels,n=n+1)
+
+def getheight(clust):
+    if clust.left==None and clust.right==None:
+        return 1
+    return getheight(clust.left)+getheight(clust.right)
+
+def getdepth(clust):
+    #return a scalling factor to adjust the length of lines
+    if clust.left==None and clust.right==None: return 0
+    return max(getdepth(clust.left),getdepth(clust.right))+clust.distance
+
+def drawdendrogram(clust,labels,jpeg='clusters.jpg'):
+    #the pic will be 20*1500pixes and the scalling factor was calculated by width/depth
+    #height and de[th
+    h=getheight(clust)*20
+    w=1200
+    depth=getdepth(clust)
+
+    scalling=float(w-150)/depth
+    img=Image.new('RGB',(w,h),(255,255,255))
+    draw=ImageDraw.Draw(img)
+    draw.line((0,h/2,10,h/2),fill=(255,0,0))
+
+    drawnode(draw,clust,10,(h/2),scalling,labels)
+    img.save(jpeg,'JPEG')
+
+def drawnode(draw,clust,x,y,scalling,labels):
+    if clust.id<0:
+        h1=getheight(clust.left)*20
+        h2=getheight(clust.right)*20
+        top=y-(h1+h2)/2
+        bottom=y+(h1+h2)/2
+
+        ll=clust.distance*scalling
+        #verticle line from clust to its leaf nodes
+        draw.line((x,top+h1/2,x,bottom-h2/2),fill=(255,0,0))
+
+        #horizontal line connecting left node
+        draw.line((x,top+h1/2,x+ll,top+h1/2),fill=(255,0,0))
+        #line connect right node
+        draw.line((x,bottom-h2/2,x+ll,bottom-h2/2),fill=(255,0,0))
+        #recursion 
+        drawnode(draw,clust.left,x+ll,top+h1/2,scalling,labels)
+        drawnode(draw,clust.right,x+ll,bottom-h2/2,scalling,labels)
+    else:
+        #draw labels when it's a leaf node
+        draw.text((x+5,y-7),labels[clust.id],(0,0,0))
 class bicluster:
     def __init__(self,vec,left=None,right=None,distance=0.0,id=None):
         self.left=left
