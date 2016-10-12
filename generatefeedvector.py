@@ -6,7 +6,7 @@ def getwordcounts(url):
     d=feedparser.parse(url)
     wc={}
     try:
-        success=re.compile(r'^2\d\d$').match(str(d['status']))
+        success=re.compile(r'^[2-3]\d\d$').match(str(d['status']))
         if success!=None:
 
             #go through all content entries
@@ -19,7 +19,11 @@ def getwordcounts(url):
                 for word in words:
                     wc.setdefault(word,0)
                     wc[word]+=1
-            return d['feed']['title'],wc
+            if d['feed']['title']!='':
+                title=d['feed']['title']
+            else:
+                title=d['feed']['subtitle']
+            return title,wc
         else:
             return False
     except: return False
@@ -39,28 +43,31 @@ for feedurl in feedlist:
     if getwordcounts(feedurl)==False: continue
     else:
         title,wc=getwordcounts(feedurl)
+        if title=='':
+            title='No title availiable'
         wordcounts[title]=wc
         for word,count in wc.items():
             apcount.setdefault(word,0)
             if count>1:
                 apcount[word]+=1
-
 wordlist=[]
-append=wordlist.append
 for w,bc in apcount.items():
     frac=float(bc)/len(feedlist)
-    if frac>0.1 and frac<0.5:
-        append(w)
+    if frac>0.05 and frac<0.3:
+        wordlist.append(w)
 
 out=file('blogdata.txt','w')
 out.write('blog')
-for word in wordlist: out.write('\t%s' % word)
+for word in wordlist: 
+    out.write('\t%s' % word)
 out.write('\n')
 for blog,wc in wordcounts.items():
     out.write(blog)
     for word in wordlist:
-        if word in wc: out.write('\t%s' % wc[word])
-        else: out.write('\t0')
+        if word in wc: 
+            out.write('\t%d' % wc[word])
+        else: 
+            out.write('\t0')
     out.write('\n')
 
 

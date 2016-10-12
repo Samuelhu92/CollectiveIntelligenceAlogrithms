@@ -1,4 +1,6 @@
 from PIL import Image,ImageDraw
+from math import sqrt
+import random
 
 def readfile(filename):
     lines=[line for line in file(filename)]
@@ -14,14 +16,14 @@ def readfile(filename):
         data.append([float(x) for x in p[1:]])
     return rownames,colnames,data
 
-from math import sqrt
+
 def pearson(v1,v2):
     #accept two numerical list as input
     sum1=sum(v1)
     sum2=sum(v2)
 
-    sum1Sq=sum(pow(v,2) for v in v1)
-    sum2Sq=sum(pow(v,2) for v in v2)
+    sum1Sq=sum([pow(v,2) for v in v1])
+    sum2Sq=sum([pow(v,2) for v in v2])
 
     pSum=sum([v1[i]*v2[i] for i in range(len(v1))])
 
@@ -61,6 +63,42 @@ def hcluster(rows,distance=pearson):
         del clust[lowestpair[0]]
         clust.append(newcluster)
     return clust[0]
+
+def kcluster(rows,distance=pearson,k=4):
+    #determine the range of each core point 
+    ranges=[(min([row[i] for row in rows]),max([row[i] for row in rows])) for i in range(len(rows[0]))]
+    #randomly generate k points 
+    clusters=[[random.random()*(ranges[i][1]-ranges[i][0])+ranges[i][0] for i in range(len(rows[0]))] for j in range(k)]
+    lastmatches=None
+    for t in range(100):
+        print 'Iteration %d' % t
+        bestmatches=[[] for i in range(k)]
+        #search for the best match in each row
+        for j in range(len(rows)):
+            row=rows[j]
+            bestmatch=0
+            for i in range(k):
+                d=distance(clusters[i],row)
+                if d<distance(clusters[bestmatch],row):
+                    bestmatch=i
+            bestmatches[bestmatch].append(j)
+
+        if bestmatches==lastmatches: 
+            break
+        lastmatches=bestmatches
+
+        #reset centre point to the average position of all assigned rows
+        for i in range(k):
+            avgs=[0.0]*len(rows[0])
+            if len(bestmatches[i])>0:
+                for rowid in bestmatches[i]:
+                    for m in range(len(rows[rowid])):
+                        avgs[m]+=rows[rowid][m]
+                for j in range(len(avgs)):
+                    avgs[j]/=len(bestmatches[i])
+                clusters[i]=avgs
+    return bestmatches
+
 
 def printclust(clust,labels=None,n=0):
     for i in range(n): print ' ',
@@ -121,6 +159,14 @@ def drawnode(draw,clust,x,y,scalling,labels):
     else:
         #draw labels when it's a leaf node
         draw.text((x+5,y-7),labels[clust.id],(0,0,0))
+
+def rotatematrix(data):
+    newdata=[]
+    for i in range(len(data)):
+        newrow=[data[j][i] for j in range(len(data))]
+        newdata.append(newrow)
+    return newdata
+
 class bicluster:
     def __init__(self,vec,left=None,right=None,distance=0.0,id=None):
         self.left=left
