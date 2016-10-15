@@ -32,6 +32,14 @@ def pearson(v1,v2):
     if den==0: return 0
 
     return 1.0-num/den
+def tanimoto(v1,v2):
+    c1,c2,shr=0,0,0
+    for i in range(len(v1)):
+        if v1[i]!=0: c1+=1
+        if v2[i]!=0: c1+=1
+        if v1[i]!=0 and v2[i]!=0: shr+=1
+
+    return 1.0-(float(shr)/(c1+c2-shr))
 
 def hcluster(rows,distance=pearson):
     distances={}
@@ -123,6 +131,50 @@ def getdepth(clust):
     if clust.left==None and clust.right==None: return 0
     return max(getdepth(clust.left),getdepth(clust.right))+clust.distance
 
+
+
+def rotatematrix(data):
+    newdata=[]
+    for i in range(len(data)):
+        newrow=[data[j][i] for j in range(len(data))]
+        newdata.append(newrow)
+    return newdata
+
+def scaledown(data,distance=pearson,rate=0.01):
+    n=len(data)
+    realdist=[[distance(data[i],data[j]) for j in range(n)] for i in range(0,n)]
+    outersum=0.0
+    #randomly initialize the node position in 2-D 
+    loc=[[random.random(),random.random()] for i in range(n)]
+    fakedist=[[0.0 for j in range(n)] for i in range(n)]
+
+    lasterror=None
+    for m in range(1000):
+        for i in range(n):
+            for j in range(n):
+                fakedist[i][j]=sqrt(sum([pow(loc[i][x]-loc[j][x],2) for x in range(len(loc[i]))]))
+        #move the node
+        grad=[[0.0,0.0] for i in range(n)]
+
+        totalerror=0
+        for k in range(n):
+            for j in range(n):
+                if j==k: continue
+                errorterm=(fakedist[j][k]-realdist[j][k])/realdist[j][k]
+                grad[k][0]+=((loc[k][0]-loc[j][0])/fakedist[j][k])*errorterm
+                grad[k][1]+=((loc[k][1]-loc[j][1])/fakedist[j][k])*errorterm
+
+                totalerror+=abs(errorterm)
+        print totalerror
+        #if case turn out to be worse after movement, then end the programme
+        if lasterror and lasterror<totalerror: break
+        lasterror=totalerror
+
+        for k in range(n):
+            loc[k][0]-=rate*grad[k][0]
+            loc[k][1]-=rate*grad[k][1]
+    return loc
+
 def drawdendrogram(clust,labels,jpeg='clusters.jpg'):
     #the pic will be 20*1500pixes and the scalling factor was calculated by width/depth
     #height and de[th
@@ -159,13 +211,15 @@ def drawnode(draw,clust,x,y,scalling,labels):
     else:
         #draw labels when it's a leaf node
         draw.text((x+5,y-7),labels[clust.id],(0,0,0))
-
-def rotatematrix(data):
-    newdata=[]
+        
+def draw2d(data,labels,jpeg='mds2d.jpg'):
+    img=Image.new('RGB',(2000,2000),(255,255,255))
+    draw=ImageDraw.Draw(img)
     for i in range(len(data)):
-        newrow=[data[j][i] for j in range(len(data))]
-        newdata.append(newrow)
-    return newdata
+        x=(data[i][0]+0.5)*1000
+        y=(data[i][1]+0.5)*1000
+        draw.text((x,y),labels[i],(0,0,0))
+    img.save(jpeg,'JPEG')
 
 class bicluster:
     def __init__(self,vec,left=None,right=None,distance=0.0,id=None):
