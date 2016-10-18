@@ -98,4 +98,55 @@ def qsort(a_list):
         pivot=a_list[0]
         return qsort([x for x in a_list[1:] if x<pivot])+[pivot]+qsort([x for x in a_list[1:] if x>=pivot])
 
+def topSort(G):
+    #Basically locate the node that has zero in-degree so that we could remove the node 
+    #with no anymore operations. then we put it before the rest 
+    count=dict((u,0) for u in G)
+    for u in G:
+        for v in G[u]:
+            count[v]+=1
+    Q=[u for u in G if count[u]==0]
+    S=[]
+    while Q:
+        u=Q.pop()
+        S.append(u)
+        for v in G[u]:
+            count[v]-=1
+            if count[v]==0:
+                Q.append(v)
+    return S
+ 
+def walk(G,s,S):
+    P,Q=dict(),set()
+    P[s]=None
+    Q.add(s)
+    while Q:
+        u=Q.pop()
+        for v in G[u].difference(P,S):
+            Q.add(v)
+            P[v]=u
+def eulaWalk(G):
+    #first of all check whether the graphy has euler circuit 
+    for u in G:
+        if len(list(G[u]))%2 ==1:
+            return None
+
+    P,Q,R=dict(),set(),dict()
+    P[s]=None
+    Q.add(s)
+    while Q:
+        u=Q.pop()
+
+def components(G):
+    comp=[]
+    seen=set()
+    for u in G:
+        if u in seen: continue
+        C=walk(G,u)
+        seen.update(u)
+        comp.append(C)
+    return comp
+
+
+
 

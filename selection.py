@@ -43,8 +43,8 @@ class HashTable:
                 return False
 
     def put(self, key, data):
-        self.slot = self.hash_function(key , self.size)
-        result = self.put_data_in_slot(key, data, slot)
+        self.slot = self.hash_function(key,self.size)
+        result = self.put_data_in_slot(key,data,slot)
         while not result:
             self.slot = self.rehash(key, self.size)
             result = self.put_data_in_slot(key, data, slot)
