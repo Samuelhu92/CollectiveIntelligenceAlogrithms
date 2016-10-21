@@ -147,6 +147,37 @@ def components(G):
         comp.append(C)
     return comp
 
+#A straightforward method to find kth smallest number in a list
+def partition(seq):
+    pi,seq=seq[0],seq[1:]
+    lo=[x for x in seq if x<pi]
+    hi=[x for x in seq if x>pi]
+    return pi,lo,hi
+
+def select(seq,k):
+    pi,lo,hi=partition(seq)
+    m=len(lo)
+    if m==k:return pi
+    elif k<m:
+        return select(lo,k)
+    else:
+        return select(hi,k-m-1)
+
+def mergesort(seq):
+    mid=len(seq)//2
+    left=seq[:mid]
+    right=seq[mid:]
+    if len(left)>1: mergesort(left)
+    if len(right)>1: mergesort(right)
+    res=[]
+    while left and right:
+        if left[-1]>=right[-1]:
+            res.append(left.pop())
+        else:
+            res.append(right.pop())
+    res.reverse()
+    return (left or right) + res
+
 
 
 

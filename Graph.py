@@ -197,10 +197,104 @@ def traverse(G,s,qtype=set):
     while Q:
         u=Q.pop()
         if u in S: continue
-            S.add(u)
-            for v in G[u]:
-                Q.add(v)
-            yeild u 
+        S.add(u)
+        for v in G[u]:
+            Q.add(v)
+        yield u 
+
+def dfs_time(G,s,d,f,S=None,t=0):
+    #dfs with timestamps
+    if S is None: S=set()
+    d[s]=t;t+=1
+    S.add(s)
+    for u in G[s]:
+        if u in S:continue
+        t=dfs_time(G,u,d,f,S,t)
+    f[s]=t;t+=1
+    return t
+def traverse(G,s,d,f,qtype=set,t=0):
+    S,Q =set(),qtype()
+    Q.add(s)
+    while Q:
+        u=Q.pop()[1]
+        if not u:
+            f[u]=t;t+1
+            yield t
+        if u in S: continue
+        S.add(u)
+        d[u]=t;t+1
+        Q.add((u,None))
+        for v in G[u]:
+            Q.add((u,v))
+
+def dfs_topsort(G):
+    S,res=set(),[]
+    def recurse(u):
+        if u in S: return
+        S.add(u)
+        for v in G[u]:
+            recurse[v]
+        res.append(u)
+    for u in G:
+        recurse(u)
+    res.reverse()
+    return res
+def iddfs(G,s):
+    yielded=set()
+    def recurse(G,s,d,S=None):
+        if s not in yielded:
+            yield s
+            yielded.add(s)
+        if d==0:return
+        if S is None: S=set()
+        S.add(s)
+        for u in G[s]:
+            if u in S: continue
+            for v in recurse(G,s,d-1,S):
+                yield v
+    n=len(G):
+    for d in range(n):
+        if len(yielded)==n:break
+        for u in recurse(G,s,d):
+            yield u
+from collections import deque
+def bfs(G,s):
+    P,Q={s:None},deque([s])
+    while Q:
+        u=Q.popleft()
+        for v in G[u]:
+            if v in P: continue
+            P[v]=u
+            Q.append(v)
+    return P
+
+def tr(G):
+    GT={}
+    for u in G:GT[u]=set()
+    for u in G:
+        for v in G[u]:
+            GT[v].add(u)
+    return GT
+
+def scc(G):
+    GT=tr(G)
+    sccs,seen=[],set()
+    for u in dfs_topsort(G):
+        if u in seen: continue
+        C=walk(GT,u,seen)
+        seen.update(C)
+        sccs.append(C)
+    return sccs
+
+from string import ascii_lowercase
+def parse_graph(s):
+    G={}
+    for u, line in zip(ascii_lowercase,s.split("/")):
+        G[u]=set(line)
+    return G
+
+
+
 
 
 
