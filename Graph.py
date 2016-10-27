@@ -164,7 +164,7 @@ def walk(G,s,S):
     while Q:
         u=Q.pop()
         for v in G[u].difference(P,S):
-            Q.add(n)
+            Q.add(v)
             P[v]=u
     return P
 def components(G,S):
@@ -293,8 +293,73 @@ def parse_graph(s):
         G[u]=set(line)
     return G
 
+from heapq import heapify,heappush,heappop
+from itertools import count
 
+def huffman(seq,frq):
+    num=count()
+    trees=list(zip(frq,num,seq))
+    heapify(trees)
+    while len(trees)>1:
+        fa,_,a = heappop(trees)
+        fb,_,b = heappop(trees)
+        n=next(num)
+        heappush(trees,(fa+fb,n,[a,b]))
+    return trees[0][-1]
+#A naive Implementation of Kruskal's Alogrithms
+def naive_find(C,u):   # try to find component rep
+    while C[u]!=u:     # rep should point to itself
+        u=C[u]
+    return u 
 
+def naive_union(C,u,v):
+    u=naive_find(C,u)
+    v=naive_find(C,v)
+    C[u]=v
+
+def naive_kruskal(G):
+    E=[(G[u][v],u,v) for u in G for v in G[u]]
+    T=set()
+    C={u:u for u in G}                         # initialize 
+    for _,u,v in sorted(E):                    # find the smallest weighted length
+        if naive_find(C,u)!=naive_find(C,v):   # if the rep isn't the same means the path is
+            T.add((u,v))                       # won't generate a circle
+            naive_union(C,u,v)
+    return T
+# Kruskal's Alogrithms
+def find(C,u):
+    if C[u]!=u:
+        C[u]=find(C,C[u])                      # using recursion 
+    return C[u]
+
+def union(C,R,u,v):
+    u,v=find(C,u),find(C,v)
+    if R[u]>R[v]:
+        G[v]=u
+    else:
+        C[u]=v
+    if R[u]==R[v]:
+        R[v] += 1
+def kruskal(G):
+    E=[(G[u][v],u,v) for u in G for v in G[u]]
+    T=set()
+    C,R={u:u for u in G},{u:0 for u in G}
+    for _,u,v in sorted(E):
+        if find(C,u)!=find(C,v):
+            T.add((u,v))
+            union(C,R,u,v)
+    return T
+
+from heapq import heappop,heappush
+
+def prim(G,s):
+    P,Q={},[(0,None,s)]                   # prim alogrithms basiclly find the smallest weighted node
+    while Q:                              # among the successive nodes of traveled node, so that the all edges are in one tree
+        _,p,u=heappop(Q)                  # 
+        if u in P: continue
+        P[u]=P
+        for v,w in G[u].items():
+            heappush(Q,(w,u,v))
 
 
 
