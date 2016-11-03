@@ -360,7 +360,80 @@ def prim(G,s):
         P[u]=P
         for v,w in G[u].items():
             heappush(Q,(w,u,v))
+# un-recursive alogrithms to find shortest path from s to t
+def dag_sp(W,s,t):
+    d={u:float('inf') for u in W}
+    d[s]=0
+    for u in dfs_topsort(W):
+        if u==t:break
+        for v in W[u]:
+            d[v]=min(d[v],d[u]+W[u][v])
+    return d[t]
+# recursive alogrithms to find shortest path from s to t
+from functools import wraps
+def memo(func):
+    cache={}
+    @wraps(func)
+    def wrap(*args):
+        if args not in cache:
+            cache[args]=func(*args)
+        return cache[args]
+    return wrap
+def rec_dag_sp(W,s,t):
+    @memo
+    def d(u):
+        if u==t:return 0
+        return min(W[u][v]+d[v] for v in W[u])
+    return d(s)
 
+def relax(W,u,v,D,P):
+    d=D.get(u,inf)+W[u][v]
+    if d<D.get(v,inf):
+        D[v],P[v]=d,u
+        return True
+
+def bellman_ford(G,s):
+    D,P={s:0},{}
+    for rnd in G:
+        changed=False
+        for u in G:
+            for v in G[u]:
+                if relax(G,u,v,D,P):
+                    changed=True
+        if not changed: break
+    else:
+        raise ValueError('negative cycle')
+    return D,P
+
+# the foundamental idea is that the backward path won't affect the shortest path 
+# estimation,so that when popped-up u was seen before, we ignore.
+def dijkstra(G,s):
+    D,P,Q,S={s:0},{},[(0,s)],set()
+    while Q:
+        _,u=heappop(Q) # the popped up u with the shortest path from s to u 
+        if u in S: continue
+        S.add(u)
+        for v in G[u]:
+            relax(G,u,v,D,P)
+            heappush(Q,(D[v],v))
+    return D,P
+
+#Johnson's Alogrithms
+def johnson(G):
+    G=deepcopy(G)
+    s=object()
+    G[s]={v:0 for v in G}
+    h,_=bellman_ford(G,s)
+    del G[s]
+    for u in G:
+        for v in G[u]:
+            G[u][v]+=h[u]-h[v]
+    D,P={},{}
+    for u in G:
+        D[u],P[u]=dijkstra(G,u)
+        for v in G:
+            D[u][v]+=h[v]-h[u]
+    return D,P
 
 
 
